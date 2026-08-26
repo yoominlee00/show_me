@@ -1,0 +1,8 @@
+.gradle/
+build/
+backend/build/
+simulator/bin/
+.idea/
+*.iml
+.env
+
