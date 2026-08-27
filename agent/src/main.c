@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <bpf/libbpf.h>
+#include <bpf/bpf.h>
 
 #include "event.h"
 #include "tcp_events.skel.h"
@@ -126,6 +127,17 @@ int main(void)
 	if (error != 0) {
 		fprintf(stderr, "failed to load BPF programs: %d\n", error);
 		goto cleanup;
+	}
+
+	{
+		__u32 key = 0;
+		__u32 agent_process_id = (__u32)getpid();
+		error = bpf_map_update_elem(bpf_map__fd(skel->maps.agent_pid), &key,
+					    &agent_process_id, BPF_ANY);
+		if (error != 0) {
+			fprintf(stderr, "failed to configure Agent PID filter: %d\n", error);
+			goto cleanup;
+		}
 	}
 
 	error = tcp_events_bpf__attach(skel);

@@ -16,6 +16,13 @@ struct {
 	__uint(max_entries, 256 * 1024);
 } events SEC(".maps");
 
+struct {
+	__uint(type, BPF_MAP_TYPE_ARRAY);
+	__uint(max_entries, 1);
+	__type(key, __u32);
+	__type(value, __u32);
+} agent_pid SEC(".maps");
+
 struct show_me_connection_metadata {
 	__u32 pid;
 	__u32 tgid;
@@ -76,6 +83,8 @@ int handle_inet_sock_set_state(struct trace_event_raw_inet_sock_set_state *ctx)
 	struct show_me_connection_metadata *saved_metadata;
 	__u64 pid_tgid;
 	__u64 socket_key = (__u64)ctx->skaddr;
+	__u32 key = 0;
+	__u32 *self_pid;
 
 	if (ctx->protocol != SHOW_ME_IPPROTO_TCP)
 		return 0;
@@ -85,6 +94,10 @@ int handle_inet_sock_set_state(struct trace_event_raw_inet_sock_set_state *ctx)
 
 	if (ctx->newstate != SHOW_ME_TCP_ESTABLISHED &&
 	    ctx->newstate != SHOW_ME_TCP_CLOSE)
+		return 0;
+
+	self_pid = bpf_map_lookup_elem(&agent_pid, &key);
+	if (self_pid != NULL && *self_pid == (__u32)(bpf_get_current_pid_tgid() >> 32))
 		return 0;
 
 	if (ctx->newstate == SHOW_ME_TCP_CLOSE) {

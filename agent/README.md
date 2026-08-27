@@ -4,7 +4,9 @@ Linux-only C/libbpf CO-RE Agent. Its first functional release will collect TCP c
 
 ## Status
 
-The current implementation attaches `sock:inet_sock_set_state` and the BTF tracepoint `tp_btf/tcp_retransmit_skb`. It prints TCP `established`, `closed`, and correlated `retransmit` events with process and socket metadata. It does **not** send events to the ingestion API yet; HTTP transport, batching and retry are a separate next step.
+The current implementation attaches `sock:inet_sock_set_state` and the BTF tracepoint `tp_btf/tcp_retransmit_skb`. It prints TCP `established`, `closed`, and correlated `retransmit` events with process and socket metadata, then publishes them to the ingestion API through a bounded queue, timeout and retry worker.
+
+The Agent excludes its own PID from collection so its API publishing connection cannot create a feedback loop.
 
 ## Supported lab
 
