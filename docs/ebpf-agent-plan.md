@@ -36,7 +36,7 @@ Linux host 안에서 발생하는 TCP 연결 품질 문제를 **프로세스와 
 ```text
 Linux kernel
  ├─ sock:inet_sock_set_state      ─┐
- ├─ tcp:tcp_retransmit_skb         ├─> eBPF programs
+ ├─ tp_btf/tcp_retransmit_skb      ├─> eBPF programs
  └─ sched:sched_process_exec      ─┘       │
                                             │ ring buffer
                                             ▼
@@ -73,7 +73,7 @@ Hook names and available tracepoint fields must be verified on the target Ubuntu
 | Signal | Primary hook | Fields to retain | Correlation |
 | --- | --- | --- | --- |
 | state transition | `sock:inet_sock_set_state` | old/new state, local/remote address and port, socket reference | socket metadata map |
-| retransmission | `tcp:tcp_retransmit_skb` | socket reference, TCP state, timestamp | lookup socket metadata map |
+| retransmission | `tp_btf/tcp_retransmit_skb` | socket reference, timestamp | lookup socket metadata map |
 | process start | `sched:sched_process_exec` | PID/TGID, `comm`, executable filename | process metadata map / direct event |
 
 ### Connection lifecycle
@@ -151,7 +151,7 @@ agent/
 
 **Deliverable:** retransmit event points to its process and destination.
 
-1. Add `tcp_retransmit_skb` tracepoint.
+1. Add `tp_btf/tcp_retransmit_skb` BTF tracepoint.
 2. Correlate retransmissions with the connection metadata map.
 3. Aggregate repeated retransmits for a configurable short window (initially 10 seconds).
 4. Report correlation misses and dropped ring-buffer records as Agent diagnostics.

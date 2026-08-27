@@ -10,6 +10,7 @@
 
 enum show_me_event_kind {
 	SHOW_ME_EVENT_TCP_STATE = 1,
+	SHOW_ME_EVENT_TCP_RETRANSMIT = 2,
 };
 
 enum show_me_tcp_action {
@@ -28,6 +29,7 @@ struct show_me_tcp_event {
 	__u16 family;
 	__u16 local_port;
 	__u16 remote_port;
+	__u32 retransmit_count;
 	__u8 kind;
 	__u8 action;
 	char comm[SHOW_ME_COMM_LEN];

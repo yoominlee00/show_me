@@ -34,6 +34,14 @@ static const char *action_name(__u8 action)
 	return action == SHOW_ME_TCP_ACTION_ESTABLISHED ? "established" : "closed";
 }
 
+static const char *event_name(__u8 kind, __u8 action)
+{
+	if (kind == SHOW_ME_EVENT_TCP_RETRANSMIT)
+		return "retransmit";
+
+	return action_name(action);
+}
+
 static int handle_event(void *context, void *data, size_t size)
 {
 	const struct show_me_tcp_event *event = data;
@@ -57,9 +65,10 @@ static int handle_event(void *context, void *data, size_t size)
 		return 0;
 	}
 
-	printf("tcp.%s pid=%u tgid=%u comm=%s local=%s:%u remote=%s:%u\n",
-	       action_name(event->action), event->pid, event->tgid, event->comm,
-	       local, event->local_port, remote, event->remote_port);
+	printf("tcp.%s pid=%u tgid=%u comm=%s local=%s:%u remote=%s:%u retransmits=%u\n",
+	       event_name(event->kind, event->action), event->pid, event->tgid,
+	       event->comm, local, event->local_port, remote, event->remote_port,
+	       event->retransmit_count);
 	return 0;
 }
 
