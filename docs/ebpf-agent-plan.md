@@ -130,7 +130,7 @@ agent/
 
 1. Create an Ubuntu 22.04 or 24.04 Linux VM.
 2. Verify BTF: `/sys/kernel/btf/vmlinux` exists.
-3. Install `clang`, `llvm`, `libbpf-dev`, `libelf-dev`, `zlib1g-dev`, `make`, `bpftool`.
+3. Install `clang`, `llvm`, `libbpf-dev`, `libelf-dev`, `zlib1g-dev`, `make`, `linux-tools-common`, and the matching `linux-tools-$(uname -r)` package that provides `bpftool`.
 4. Add `agent/` Makefile and generate skeleton/header artifacts.
 5. Implement clean SIGINT/SIGTERM unload.
 
@@ -213,4 +213,3 @@ macOS and Docker Desktop are not the validation environment for this Agent. They
 - [ ] Queue overflow and correlation misses are observable in Agent logs/counters.
 - [ ] No payload, command-line argument, environment variable or raw machine ID is transmitted.
 - [ ] Linux setup, permissions, run command, cleanup and demo evidence are documented.
-
