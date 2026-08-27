@@ -24,7 +24,7 @@ AGENT := $(BUILD_DIR)/show-me-agent
 BPF_CFLAGS := -g -O2 -target bpf -D__BPF__ -D__TARGET_ARCH_$(TARGET_ARCH) \
 	-I$(INCLUDE_DIR) -I$(BPF_DIR)
 USER_CFLAGS := -g -O2 -Wall -Wextra -Werror -I$(INCLUDE_DIR) -I$(BUILD_DIR)
-USER_LIBS := -lbpf -lelf -lz
+USER_LIBS := -lbpf -lelf -lz -lcurl -lpthread
 
 .PHONY: all clean check-prerequisites
 
@@ -48,8 +48,8 @@ $(BPF_OBJ): $(BPF_DIR)/tcp_events.bpf.c $(INCLUDE_DIR)/event.h $(VMLINUX) | $(BU
 $(SKEL): $(BPF_OBJ)
 	$(BPFTOOL) gen skeleton $< > $@
 
-$(AGENT): $(SRC_DIR)/main.c $(INCLUDE_DIR)/event.h $(SKEL) | $(BUILD_DIR)
-	$(CC) $(USER_CFLAGS) $< -o $@ $(USER_LIBS)
+$(AGENT): $(SRC_DIR)/main.c $(SRC_DIR)/transport.c $(INCLUDE_DIR)/event.h $(INCLUDE_DIR)/transport.h $(SKEL) | $(BUILD_DIR)
+	$(CC) $(USER_CFLAGS) $(SRC_DIR)/main.c $(SRC_DIR)/transport.c -o $@ $(USER_LIBS)
 
 clean:
 	rm -rf $(BUILD_DIR) $(VMLINUX)

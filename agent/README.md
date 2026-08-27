@@ -11,7 +11,7 @@ The current implementation attaches `sock:inet_sock_set_state` and the BTF trace
 - Ubuntu 22.04 or 24.04
 - BTF enabled at `/sys/kernel/btf/vmlinux`
 - x86_64 or arm64 Linux
-- `clang`, `llvm`, `make`, `bpftool`, `libbpf-dev`, `libelf-dev`, `zlib1g-dev`
+- `clang`, `llvm`, `make`, `bpftool`, `libbpf-dev`, `libelf-dev`, `zlib1g-dev`, `libcurl4-openssl-dev`
 
 macOS and Docker Desktop are not supported validation environments because the Agent attaches to the host Linux kernel.
 
@@ -20,7 +20,7 @@ macOS and Docker Desktop are not supported validation environments because the A
 ```bash
 sudo apt-get update
 sudo apt-get install -y clang llvm make libbpf-dev libelf-dev zlib1g-dev \
-  linux-tools-common "linux-tools-$(uname -r)"
+  libcurl4-openssl-dev linux-tools-common "linux-tools-$(uname -r)"
 
 BPFTOOL="$(command -v bpftool || find /usr/lib/linux-tools/$(uname -r) -name bpftool -type f | head -n 1)" \
   make -C agent
@@ -30,10 +30,10 @@ BPFTOOL="$(command -v bpftool || find /usr/lib/linux-tools/$(uname -r) -name bpf
 
 ## Run
 
-Use a disposable Linux VM first. Runtime privilege requirements depend on the kernel; modern systems generally need `CAP_BPF` and `CAP_PERFMON`, while older kernels may require `CAP_SYS_ADMIN`.
+Use a disposable Linux VM first. Runtime privilege requirements depend on the kernel; modern systems generally need `CAP_BPF` and `CAP_PERFMON`, while older kernels may require `CAP_SYS_ADMIN`. `INGEST_API_TOKEN` is required; `SHOW_ME_INGEST_URL` defaults to `http://localhost:8080/api/v1/events`.
 
 ```bash
-sudo ./agent/build/show-me-agent
+sudo INGEST_API_TOKEN=local-dev-token ./agent/build/show-me-agent
 ```
 
 Stop with `Ctrl+C`; libbpf detaches the loaded programs during process cleanup.

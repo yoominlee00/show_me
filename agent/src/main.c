@@ -12,6 +12,7 @@
 
 #include "event.h"
 #include "tcp_events.skel.h"
+#include "transport.h"
 
 static volatile sig_atomic_t exiting;
 
@@ -50,7 +51,7 @@ static int handle_event(void *context, void *data, size_t size)
 	const char *local;
 	const char *remote;
 
-	(void)context;
+	struct show_me_transport *transport = context;
 	if (size != sizeof(*event)) {
 		fprintf(stderr, "unexpected event size: %zu\n", size);
 		return 0;
@@ -69,6 +70,8 @@ static int handle_event(void *context, void *data, size_t size)
 	       event_name(event->kind, event->action), event->pid, event->tgid,
 	       event->comm, local, event->local_port, remote, event->remote_port,
 	       event->retransmit_count);
+	if (!show_me_transport_submit(transport, event))
+		fprintf(stderr, "transport queue full; event dropped\n");
 	return 0;
 }
 
@@ -76,7 +79,36 @@ int main(void)
 {
 	struct ring_buffer *ring_buffer = NULL;
 	struct tcp_events_bpf *skel = NULL;
+	struct show_me_transport *transport = NULL;
+	struct show_me_transport_config transport_config;
+	const char *token = getenv("INGEST_API_TOKEN");
+	const char *endpoint = getenv("SHOW_ME_INGEST_URL");
+	const char *configured_agent_id = getenv("SHOW_ME_AGENT_ID");
+	char host_name[128];
+	char agent_id[128];
 	int error = 0;
+
+	if (token == NULL || token[0] == '\0') {
+		fprintf(stderr, "INGEST_API_TOKEN is required\n");
+		return EXIT_FAILURE;
+	}
+	if (gethostname(host_name, sizeof(host_name)) != 0) {
+		perror("gethostname");
+		return EXIT_FAILURE;
+	}
+	host_name[sizeof(host_name) - 1] = '\0';
+	snprintf(agent_id, sizeof(agent_id), "%s", configured_agent_id != NULL ? configured_agent_id : host_name);
+	transport_config = (struct show_me_transport_config){
+		.endpoint = endpoint != NULL ? endpoint : "http://localhost:8080/api/v1/events",
+		.api_token = token,
+		.agent_id = agent_id,
+		.host_name = host_name,
+	};
+	transport = show_me_transport_start(&transport_config);
+	if (transport == NULL) {
+		fprintf(stderr, "failed to start ingestion transport\n");
+		return EXIT_FAILURE;
+	}
 
 	libbpf_set_strict_mode(LIBBPF_STRICT_ALL);
 	libbpf_set_print(libbpf_log);
@@ -103,7 +135,7 @@ int main(void)
 	}
 
 	ring_buffer = ring_buffer__new(bpf_map__fd(skel->maps.events), handle_event,
-				      NULL, NULL);
+				      transport, NULL);
 	if (ring_buffer == NULL) {
 		error = -errno;
 		fprintf(stderr, "failed to create ring buffer: %d\n", error);
@@ -126,5 +158,8 @@ int main(void)
 cleanup:
 	ring_buffer__free(ring_buffer);
 	tcp_events_bpf__destroy(skel);
+	if (transport != NULL)
+		fprintf(stderr, "transport dropped events: %zu\n", show_me_transport_dropped(transport));
+	show_me_transport_stop(transport);
 	return error == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
