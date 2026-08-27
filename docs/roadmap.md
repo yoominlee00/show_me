@@ -11,7 +11,19 @@
 - [ ] request/response observability and latency measurement
 - [ ] benchmark results committed to this repository
 
-## Phase 2 — queryable state
+## Phase 2 — eBPF TCP Agent
+
+Goal: simulator와 별개로 실제 Linux kernel signal을 수집한다. 상세 구현 순서는 [eBPF Agent plan](ebpf-agent-plan.md)을 따른다.
+
+- [ ] Ubuntu Linux lab과 BTF/권한 사전 점검
+- [ ] C/libbpf CO-RE Agent skeleton
+- [ ] TCP connection lifecycle 수집
+- [ ] TCP retransmit와 process/destination correlation
+- [ ] existing ingestion API transport, retry, queue diagnostics
+- [ ] `tc netem` 기반 Linux integration scenario
+- [ ] privacy/cardinality review
+
+## Phase 3 — queryable state
 
 Goal: raw event를 직접 읽지 않고 운영자가 최근 host 상태를 확인한다.
 
@@ -20,7 +32,7 @@ Goal: raw event를 직접 읽지 않고 운영자가 최근 host 상태를 확�
 - [ ] pagination, time range and agent filtering
 - [ ] latest-state query performance measurement
 
-## Phase 3 — decoupled processing
+## Phase 4 — decoupled processing
 
 Goal: burst와 분석 처리 비용이 ingestion availability에 영향을 주지 않게 한다.
 
@@ -29,7 +41,7 @@ Goal: burst와 분석 처리 비용이 ingestion availability에 영향을 주�
 - [ ] idempotent consumer와 retry/DLQ 설계
 - [ ] raw history와 aggregate projection 분리
 
-## Phase 4 — operations
+## Phase 5 — operations
 
 Goal: 운영자가 시스템과 Agent 상태를 관찰할 수 있다.
 
@@ -39,12 +51,9 @@ Goal: 운영자가 시스템과 Agent 상태를 관찰할 수 있다.
 - [ ] 단일 Linux VM에 Docker Compose 배포
 - [ ] 배포 runbook 및 장애 복구 절차 문서화
 
-## Phase 5 — real Agent and orchestration
+## Phase 6 — orchestration
 
-Goal: simulator를 실제 Linux signal collector로 대체하고 여러 node로 확장한다.
+Goal: 실제 여러 node에 Agent를 배포한다.
 
-- [ ] eBPF + C/libbpf Agent prototype
-- [ ] compatibility and privilege model
 - [ ] Kubernetes DaemonSet deployment
 - [ ] Kubernetes에서 실제 운영 요구가 생길 때 GitOps/mesh 검토
-

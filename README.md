@@ -36,7 +36,7 @@
 └────────────────────────────────────────────────────────────────┘
 ```
 
-자세한 기술 선택과 확장 기준은 [architecture.md](docs/architecture.md)를 참고하세요.
+자세한 기술 선택과 확장 기준은 [architecture.md](docs/architecture.md)를 참고하세요. 실제 Linux eBPF Agent의 수집 범위와 구현 순서는 [eBPF Agent plan](docs/ebpf-agent-plan.md)에 고정했습니다.
 
 ## Quick start
 
@@ -165,7 +165,7 @@ docker run --rm \
 .
 ├── backend/                 # Spring Boot API, Flyway migration, tests
 ├── simulator/               # Go telemetry generator
-├── docs/                    # architecture, benchmark and roadmap
+├── docs/                    # architecture, eBPF plan, contract, benchmark, roadmap
 ├── compose.yaml             # local three-service stack
 └── .github/workflows/ci.yml # test and image-build CI
 ```
@@ -189,7 +189,7 @@ GitHub Actions는 `main` push와 pull request에서 다음을 실행합니다.
 3. ingestion과 processing이 병목으로 결합되는지 측정
 4. 결과를 근거로 Kafka 도입 여부 결정
 5. latest state/baseline 조회 비용을 근거로 Redis 도입 여부 결정
-6. Prometheus/Grafana, eBPF Agent, 단일 VM 배포
+6. Linux eBPF Agent (TCP connection/retransmit)와 단일 VM 배포
 7. 실제 멀티 노드 운영 필요 시 Kubernetes + DaemonSet
 
-세부 계획은 [roadmap.md](docs/roadmap.md)에 있습니다.
+세부 계획은 [roadmap.md](docs/roadmap.md)에 있습니다. eBPF 구현 순서는 [eBPF Agent plan](docs/ebpf-agent-plan.md), Agent가 전송할 JSON은 [eBPF event contract](docs/ebpf-event-contract.md)를 참고하세요.

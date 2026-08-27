@@ -16,9 +16,11 @@ WebFlux는 JD 키워드 때문에 선행 도입하지 않는다. 높은 동시 �
 
 raw event의 append 중심 저장소로 MySQL을 사용한다. Flyway migration으로 테이블을 관리하며, `received_at` 및 `(agent_id, occurred_at)` 인덱스를 둔다. raw event는 7일만 보관한다.
 
-### Go simulator
+### Go simulator and planned eBPF Agent
 
-실제 eBPF Agent 전에 여러 Agent가 지속적으로 데이터를 보내는 환경을 재현한다. Agent 수와 전송 간격을 조절해 ingestion API의 성능 한계를 찾는 용도다.
+Go simulator는 실제 eBPF Agent 전에 여러 Agent가 지속적으로 데이터를 보내는 환경을 재현한다. Agent 수와 전송 간격을 조절해 ingestion API의 성능 한계를 찾는 용도다.
+
+실제 Linux 관측에는 C/libbpf CO-RE Agent를 추가한다. 첫 수집 범위는 프로세스별 TCP connection lifecycle과 retransmission이며, eBPF가 커널의 socket/TCP event를 process와 destination metadata에 연결한다. 상세 범위·권한·Linux 검증 기준은 [eBPF Agent plan](ebpf-agent-plan.md)을 따른다.
 
 ### API token authentication
 
@@ -31,7 +33,7 @@ raw event의 append 중심 저장소로 MySQL을 사용한다. Flyway migration�
 | Kafka | API와 DB 저장만 있는 단계에서는 운영 복잡도만 증가 | burst에서 processing/DB 지연이 ingestion latency와 실패율을 높임 |
 | Redis | 아직 최신 상태·baseline 조회가 없음 | MySQL 기반 latest-state/baseline 조회가 hot path가 됨 |
 | Schema Registry | producer/consumer가 아직 분리되지 않음 | event type 증가, 독립 consumer, 호환성 관리 필요 |
-| eBPF | collector 요구가 아직 확정되지 않음 | 실제 Linux host에서 kernel-level signal 수집 필요 |
+| eBPF beyond TCP Agent | 첫 Agent는 TCP 관찰로 범위를 고정 | 파일/보안/syscall 수집에 구체적 운영 요구가 생김 |
 | Prometheus/Grafana | 앱·시스템 메트릭을 먼저 정의해야 함 | benchmark와 운영 지표를 시각화할 필요 |
 | Kubernetes | 단일 Compose 배포로 현재 실험 범위를 충족 | 여러 node, rollout, Agent DaemonSet 요구 |
 | Istio / Argo CD | 배포·트래픽 운영 문제가 아직 없음 | Kubernetes 운영에서 반복되는 배포/네트워크 요구 |
@@ -40,10 +42,10 @@ raw event의 append 중심 저장소로 MySQL을 사용한다. Flyway migration�
 
 ```text
 Phase 1  Go simulator → Spring ingestion → MySQL
-Phase 2  Agent/eBPF → Spring ingestion → Kafka → consumer → MySQL
-Phase 3  Kafka consumer → Redis latest state + MySQL history
-Phase 4  Prometheus/Grafana → Docker VM deployment → Kubernetes DaemonSet
+Phase 2  Linux eBPF TCP Agent → Spring ingestion → MySQL
+Phase 3  Agent/eBPF → Spring ingestion → Kafka → consumer → MySQL
+Phase 4  Kafka consumer → Redis latest state + MySQL history
+Phase 5  Prometheus/Grafana → Docker VM deployment → Kubernetes DaemonSet
 ```
 
 각 화살표는 기능 목록이 아니라, 이전 단계의 관측 결과로 정당화돼야 한다.
-
