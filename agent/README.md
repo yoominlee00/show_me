@@ -4,7 +4,7 @@ Linux-only C/libbpf CO-RE Agent. Its first functional release will collect TCP c
 
 ## Status
 
-This commit provides the build and lifecycle skeleton only. It loads an empty BPF object and does **not** yet attach a TCP tracepoint or send events. The next commits add these capabilities separately.
+The current implementation attaches `sock:inet_sock_set_state` and prints TCP `established` and `closed` socket events. It does **not** send events to the ingestion API yet; HTTP transport, batching and retry are a separate next step.
 
 ## Supported lab
 
@@ -19,8 +19,11 @@ macOS and Docker Desktop are not supported validation environments because the A
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y clang llvm make bpftool libbpf-dev libelf-dev zlib1g-dev
-make -C agent
+sudo apt-get install -y clang llvm make libbpf-dev libelf-dev zlib1g-dev \
+  linux-tools-common "linux-tools-$(uname -r)"
+
+BPFTOOL="$(command -v bpftool || find /usr/lib/linux-tools/$(uname -r) -name bpftool -type f | head -n 1)" \
+  make -C agent
 ```
 
 `make` generates `bpf/vmlinux.h` from the current host’s BTF and creates `build/show-me-agent`. Generated files are ignored by Git.
@@ -36,4 +39,3 @@ sudo ./agent/build/show-me-agent
 Stop with `Ctrl+C`; libbpf detaches the loaded programs during process cleanup.
 
 The complete event contract and step-by-step validation plan are in [../docs/ebpf-agent-plan.md](../docs/ebpf-agent-plan.md).
-

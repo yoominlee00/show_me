@@ -1,13 +1,16 @@
 #include <errno.h>
+#include <arpa/inet.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <bpf/libbpf.h>
 
+#include "event.h"
 #include "tcp_events.skel.h"
 
 static volatile sig_atomic_t exiting;
@@ -26,8 +29,43 @@ static void handle_signal(int signal_number)
 	exiting = 1;
 }
 
+static const char *action_name(__u8 action)
+{
+	return action == SHOW_ME_TCP_ACTION_ESTABLISHED ? "established" : "closed";
+}
+
+static int handle_event(void *context, void *data, size_t size)
+{
+	const struct show_me_tcp_event *event = data;
+	char local_address[INET6_ADDRSTRLEN];
+	char remote_address[INET6_ADDRSTRLEN];
+	const char *local;
+	const char *remote;
+
+	(void)context;
+	if (size != sizeof(*event)) {
+		fprintf(stderr, "unexpected event size: %zu\n", size);
+		return 0;
+	}
+
+	local = inet_ntop(event->family, event->local_address, local_address,
+			  sizeof(local_address));
+	remote = inet_ntop(event->family, event->remote_address, remote_address,
+			   sizeof(remote_address));
+	if (local == NULL || remote == NULL) {
+		fprintf(stderr, "unable to format socket address: %s\n", strerror(errno));
+		return 0;
+	}
+
+	printf("tcp.%s pid=%u tgid=%u comm=%s local=%s:%u remote=%s:%u\n",
+	       action_name(event->action), event->pid, event->tgid, event->comm,
+	       local, event->local_port, remote, event->remote_port);
+	return 0;
+}
+
 int main(void)
 {
+	struct ring_buffer *ring_buffer = NULL;
 	struct tcp_events_bpf *skel = NULL;
 	int error = 0;
 
@@ -55,11 +93,29 @@ int main(void)
 		goto cleanup;
 	}
 
-	printf("show-me Agent loaded; no TCP hook is enabled in this skeleton yet\n");
-	while (!exiting)
-		pause();
+	ring_buffer = ring_buffer__new(bpf_map__fd(skel->maps.events), handle_event,
+				      NULL, NULL);
+	if (ring_buffer == NULL) {
+		error = -errno;
+		fprintf(stderr, "failed to create ring buffer: %d\n", error);
+		goto cleanup;
+	}
+
+	printf("show-me Agent loaded; collecting TCP established and closed events\n");
+	while (!exiting) {
+		error = ring_buffer__poll(ring_buffer, 100);
+		if (error == -EINTR)
+			continue;
+		if (error < 0) {
+			fprintf(stderr, "ring-buffer poll failed: %d\n", error);
+			goto cleanup;
+		}
+	}
+
+	error = 0;
 
 cleanup:
+	ring_buffer__free(ring_buffer);
 	tcp_events_bpf__destroy(skel);
 	return error == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

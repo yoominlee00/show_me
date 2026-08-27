@@ -1,7 +1,9 @@
 #ifndef SHOW_ME_AGENT_EVENT_H
 #define SHOW_ME_AGENT_EVENT_H
 
+#ifndef __BPF__
 #include <linux/types.h>
+#endif
 
 #define SHOW_ME_COMM_LEN 16
 #define SHOW_ME_IP_LEN 16
@@ -34,4 +36,3 @@ struct show_me_tcp_event {
 };
 
 #endif /* SHOW_ME_AGENT_EVENT_H */
-

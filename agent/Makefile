@@ -21,7 +21,7 @@ BPF_OBJ := $(BUILD_DIR)/tcp_events.bpf.o
 SKEL := $(BUILD_DIR)/tcp_events.skel.h
 AGENT := $(BUILD_DIR)/show-me-agent
 
-BPF_CFLAGS := -g -O2 -target bpf -D__TARGET_ARCH_$(TARGET_ARCH) \
+BPF_CFLAGS := -g -O2 -target bpf -D__BPF__ -D__TARGET_ARCH_$(TARGET_ARCH) \
 	-I$(INCLUDE_DIR) -I$(BPF_DIR)
 USER_CFLAGS := -g -O2 -Wall -Wextra -Werror -I$(INCLUDE_DIR) -I$(BUILD_DIR)
 USER_LIBS := -lbpf -lelf -lz
