@@ -143,13 +143,13 @@ INGEST_API_TOKEN=change-me go run . \
 
 ### Test
 
-Gradle이 설치돼 있다면 다음을 실행합니다.
+프로젝트에 고정된 Gradle Wrapper로 실행합니다.
 
 ```bash
-gradle :backend:test
+./gradlew :backend:test
 ```
 
-Gradle을 host에 설치하지 않았다면 Docker로 실행할 수 있습니다.
+Gradle을 host에 설치할 필요가 없습니다. Wrapper가 Gradle 8.10.2를 자동으로 내려받습니다. 다운로드가 불가능한 환경에서는 Docker로 실행할 수 있습니다.
 
 ```bash
 docker run --rm \

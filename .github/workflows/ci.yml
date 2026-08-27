@@ -19,7 +19,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - run: gradle :backend:test :backend:bootJar --no-daemon
+      - run: ./gradlew :backend:test :backend:bootJar --no-daemon
 
   images:
     runs-on: ubuntu-latest
@@ -36,4 +36,3 @@ jobs:
           context: .
           file: simulator/Dockerfile
           push: false
-
